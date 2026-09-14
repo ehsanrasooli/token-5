@@ -1,0 +1,55 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract SimpleVoting {
+    // ساختار ذخیره اطلاعات کاندیداها
+    struct Candidate {
+        string name;
+        uint256 voteCount;
+    }
+
+    address public owner;
+    mapping(address => bool) public hasVoted;
+    Candidate[] public candidates;
+
+    event Voted(address indexed voter, uint256 candidateIndex);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this");
+        _;
+    }
+
+    // سازنده قرارداد که لیست کاندیداها را هنگام دیپلوی دریافت می‌کند
+    constructor(string[] memory candidateNames) {
+        owner = msg.sender;
+        for (uint i = 0; i < candidateNames.length; i++) {
+            candidates.push(Candidate({
+                name: candidateNames[i],
+                voteCount: 0
+            }));
+        }
+    }
+
+    // تابع ثبت رای
+    function vote(uint256 candidateIndex) external {
+        require(!hasVoted[msg.sender], "You have already voted");
+        require(candidateIndex < candidates.length, "Invalid candidate");
+
+        hasVoted[msg.sender] = true;
+        candidates[candidateIndex].voteCount += 1;
+
+        emit Voted(msg.sender, candidateIndex);
+    }
+
+    // دریافت تعداد کل کاندیداها
+    function getCandidatesCount() external view returns (uint256) {
+        return candidates.length;
+    }
+
+    // مشاهده اطلاعات و تعداد رای یک کاندیدا
+    function getCandidate(uint256 index) external view returns (string memory name, uint256 voteCount) {
+        require(index < candidates.length, "Invalid candidate");
+        Candidate memory c = candidates[index];
+        return (c.name, c.voteCount);
+    }
+}
